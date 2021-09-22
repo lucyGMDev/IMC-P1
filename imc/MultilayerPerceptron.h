@@ -122,6 +122,8 @@ public:
 	// Optional Kaggle: Load the model weights from a textfile
 	bool readWeights(const char * archivo);
 
+	void show();
+
 };
 
 };
