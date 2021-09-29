@@ -35,21 +35,32 @@ int MultilayerPerceptron::initialize(int nl, int npl[])
 	this->nOfLayers = nl;
 	this->layers = new Layer[this->nOfLayers];
 	std::cerr << "Numero de capas " << this->nOfLayers << std::endl;
-	
+
 	for (int i = 0; i < nl; i++)
 	{
 		this->layers[i].nOfNeurons = npl[i];
 		this->layers[i].neurons = new Neuron[npl[i]];
 		for (int j = 0; j < npl[i]; j++)
 		{
-			if (i > 0)
+			if (i > 0) //Inicializo los los pesos de las neuronas (la primera capa no tiene neuronas)
 			{
-				this->layers[i].neurons[j].w = new double[npl[i - i]];
-				for (int k = 0; k < npl[i - 1]+1; k++) //+1 por el sesgo
+
+				int numWeightInputs = npl[i - 1] + 1;
+				this->layers[i].neurons[j].w = new double[numWeightInputs];
+				for (int k = 0; k < numWeightInputs; k++) //+1 por el sesgo
 				{
-					this->layers[i].neurons[j].w[k] = (double)((rand()) % 100 / (double)10) + 1;
+					this->layers[i].neurons[j].w[k] = (double)((rand()) % 200 / (double)100) - 1;
 				}
 			}
+			else
+			{
+				this->layers[i].neurons[j].w = nullptr;
+			}
+			this->layers[i].neurons[j].out = 0;
+			this->layers[i].neurons[j].delta = 0;
+			this->layers[i].neurons[j].deltaW = 0;
+			this->layers[i].neurons[j].lastDeltaW = 0;
+			this->layers[i].neurons[j].wCopy = 0;
 		}
 	}
 
@@ -67,6 +78,28 @@ MultilayerPerceptron::~MultilayerPerceptron()
 // Free memory for the data structures
 void MultilayerPerceptron::freeMemory()
 {
+	for (int i = 0; i < nOfLayers; i++)
+	{
+		for (int j = 0; j < layers[i].nOfNeurons; j++)
+		{
+			layers[i].neurons[j].out = 0;
+			layers[i].neurons[j].delta = 0;
+			delete[] layers[i].neurons[j].w;
+			layers[i].neurons[j].w = nullptr;
+			delete layers[i].neurons[j].deltaW;
+			layers[i].neurons[j].deltaW = nullptr;
+			delete layers[i].neurons[j].lastDeltaW;
+			layers[i].neurons[j].lastDeltaW = nullptr;
+			delete[] layers[i].neurons[j].wCopy;
+			layers[i].neurons[j].wCopy = nullptr;
+		}
+		delete[] layers[i].neurons;
+		layers[i].neurons = nullptr;
+		layers[i].nOfNeurons = 0;
+	}
+	delete[] layers;
+	layers = nullptr;
+	nOfLayers = 0;
 }
 
 // ------------------------------
@@ -79,6 +112,12 @@ void MultilayerPerceptron::randomWeights()
 // Feed the input neurons of the network with a vector passed as an argument
 void MultilayerPerceptron::feedInputs(double *input)
 {
+	int inputLength = sizeof(input) / sizeof(double);
+	std::cout << inputLength << std::endl;
+	for (int i = 0; i < this->layers[0].nOfNeurons; i++)
+	{
+		this->layers[0].neurons[i].out = input[i];
+	}
 }
 
 // ------------------------------
