@@ -5,7 +5,7 @@
 
 #ifndef _MULTILAYERPERCEPTRON_H_
 #define _MULTILAYERPERCEPTRON_H_
-
+#include <iostream>
 namespace imc
 {
 
@@ -125,7 +125,31 @@ namespace imc
 		// Optional Kaggle: Load the model weights from a textfile
 		bool readWeights(const char *archivo);
 		void show();
-		void addInput(double *input){this->feedInputs(input);}
+		void addInput(double *input) { this->feedInputs(input); }
+		void showInputs();
+		void calcularSalida(double *output)
+		{
+			this->forwardPropagate();
+			this->getOutputs(output);
+		}
+
+		void CopyWeights()
+		{
+			this->copyWeights();
+		}
+		void TestCopyWeights()
+		{
+			for (int i = 1; i < this->nOfLayers; i++)
+			{
+				for (int j = 0; j < this->layers[i].nOfNeurons; j++)
+				{
+					for(int k=0;k<this->layers[i-1].nOfNeurons;k++)
+					{
+						std::cout<<this->layers[i].neurons[j].w[k]<<"-"<<this->layers[i].neurons[j].wCopy[k]<<std::endl;
+					}
+				}
+			}
+		}
 	};
 
 };

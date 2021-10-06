@@ -34,7 +34,6 @@ int MultilayerPerceptron::initialize(int nl, int npl[])
 	srand(time(NULL));
 	this->nOfLayers = nl;
 	this->layers = new Layer[this->nOfLayers];
-	std::cerr << "Numero de capas " << this->nOfLayers << std::endl;
 
 	for (int i = 0; i < nl; i++)
 	{
@@ -44,23 +43,24 @@ int MultilayerPerceptron::initialize(int nl, int npl[])
 		{
 			if (i > 0) //Inicializo los los pesos de las neuronas (la primera capa no tiene neuronas)
 			{
-
-				int numWeightInputs = npl[i - 1] + 1;
+				int numWeightInputs = npl[i - 1] + 1;//+1 por el sesgo
 				this->layers[i].neurons[j].w = new double[numWeightInputs];
-				for (int k = 0; k < numWeightInputs; k++) //+1 por el sesgo
+				this->layers[i].neurons[j].wCopy = new double[numWeightInputs];
+				for (int k = 0; k < numWeightInputs; k++) 
 				{
 					this->layers[i].neurons[j].w[k] = (double)((rand()) % 200 / (double)100) - 1;
+					this->layers[i].neurons[j].wCopy[k] = 0;
 				}
 			}
 			else
 			{
 				this->layers[i].neurons[j].w = nullptr;
+				this->layers[i].neurons[j].wCopy = nullptr;
 			}
 			this->layers[i].neurons[j].out = 0;
 			this->layers[i].neurons[j].delta = 0;
 			this->layers[i].neurons[j].deltaW = 0;
 			this->layers[i].neurons[j].lastDeltaW = 0;
-			this->layers[i].neurons[j].wCopy = 0;
 		}
 	}
 
@@ -113,7 +113,6 @@ void MultilayerPerceptron::randomWeights()
 void MultilayerPerceptron::feedInputs(double *input)
 {
 	int inputLength = sizeof(input) / sizeof(double);
-	std::cout << inputLength << std::endl;
 	for (int i = 0; i < this->layers[0].nOfNeurons; i++)
 	{
 		this->layers[0].neurons[i].out = input[i];
@@ -124,24 +123,65 @@ void MultilayerPerceptron::feedInputs(double *input)
 // Get the outputs predicted by the network (out vector the output layer) and save them in the vector passed as an argument
 void MultilayerPerceptron::getOutputs(double *output)
 {
+	for (int i = 0; i < this->layers[nOfLayers - 1].nOfNeurons; i++)
+	{
+		output[i] = this->layers[nOfLayers - 1].neurons[i].out;
+	}
 }
 
 // ------------------------------
 // Make a copy of all the weights (copy w in wCopy)
 void MultilayerPerceptron::copyWeights()
 {
+	//TODO Check Function
+	for (int i = 1; i < this->nOfLayers; i++)
+	{
+		std::cerr<<"Entro en la capa "<<i<<std::endl;
+		for (int j = 0; j < this->layers[i].nOfNeurons; j++)
+		{
+			std::cerr<<"Neurona "<<j<<std::endl;
+			for (int k = 0; k < this->layers[i - 1].nOfNeurons; k++)
+			{
+				this->layers[i].neurons[j].wCopy[k] = this->layers[i].neurons[j].w[k];
+			}
+		}
+	}
 }
 
 // ------------------------------
 // Restore a copy of all the weights (copy wCopy in w)
 void MultilayerPerceptron::restoreWeights()
 {
+	for (int i = 0; i < this->nOfLayers; i++)
+	{
+		for (int j = 0; j < this->layers[i].nOfNeurons; j++)
+		{
+			for (int k = 0; k < this->layers[i - 1].nOfNeurons; k++)
+			{
+				this->layers[i].neurons[j].w[k] = this->layers[i].neurons[j].wCopy[k];
+			}
+		}
+	}
 }
 
 // ------------------------------
 // Calculate and propagate the outputs of the neurons, from the first layer until the last one -->-->
 void MultilayerPerceptron::forwardPropagate()
 {
+	for (int i = 1; i < this->nOfLayers; i++)
+	{
+		for (int j = 0; j < this->layers[i].nOfNeurons; j++)
+		{
+			double sum = 0;
+			int k;
+			for (k = 0; k < this->layers[i - 1].nOfNeurons; k++)
+			{
+				sum += this->layers[i - 1].neurons[j+k].out * this->layers[i].neurons[j].w[k];
+			}
+			sum += this->layers[i].neurons[j].w[k];
+			this->layers[i].neurons[j].out = 1 / (1 + exp(-sum));
+		}
+	}
 }
 
 // ------------------------------
@@ -247,12 +287,20 @@ void MultilayerPerceptron::show()
 			for (int j = 0; j < this->layers[i].nOfNeurons; j++)
 			{
 				std::cout << "Mostrando pesos de la neurona " << j << " de la capa " << i << std::endl;
-				for (int k = 0; k < this->layers[i - 1].nOfNeurons; k++)
+				for (int k = 0; k < this->layers[i - 1].nOfNeurons + 1; k++)
 				{
 					std::cout << this->layers[i].neurons[j].w[k] << std::endl;
 				}
 			}
 		}
+	}
+}
+
+void MultilayerPerceptron::showInputs()
+{
+	for (int i = 0; i < this->layers[0].nOfNeurons; i++)
+	{
+		std::cout << this->layers[0].neurons[i].out << std::endl;
 	}
 }
 
