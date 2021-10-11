@@ -188,7 +188,18 @@ void MultilayerPerceptron::forwardPropagate()
 // Obtain the output error (MSE) of the out vector of the output layer wrt a target vector and return it
 double MultilayerPerceptron::obtainError(double *target)
 {
-	return -1;
+	int outputSize = this->layers[nOfLayers - 1].nOfNeurons;
+	double* outputs = new double[outputSize];
+	this->getOutputs(outputs);
+	double error = 0;
+	for(int i=0;i<outputSize;i++)
+	{
+		std::cout<<"Output: " << outputs[i] << std::endl;
+		std::cout<<"Target: " <<target[i] << std::endl;
+		error+=pow(target[i]-outputs[i],2);
+	}
+	error/=outputSize;
+	return error;
 }
 
 // ------------------------------

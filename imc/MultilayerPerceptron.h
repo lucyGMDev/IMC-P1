@@ -124,32 +124,22 @@ namespace imc
 
 		// Optional Kaggle: Load the model weights from a textfile
 		bool readWeights(const char *archivo);
+
+		//Function to testing
 		void show();
 		void addInput(double *input) { this->feedInputs(input); }
 		void showInputs();
-		void calcularSalida(double *output)
+		void computeOutput()
 		{
 			this->forwardPropagate();
-			this->getOutputs(output);
 		}
 
-		void CopyWeights()
+		double getError(double *target)
 		{
-			this->copyWeights();
+			return this->obtainError(target);
 		}
-		void TestCopyWeights()
-		{
-			for (int i = 1; i < this->nOfLayers; i++)
-			{
-				for (int j = 0; j < this->layers[i].nOfNeurons; j++)
-				{
-					for(int k=0;k<this->layers[i-1].nOfNeurons;k++)
-					{
-						std::cout<<this->layers[i].neurons[j].w[k]<<"-"<<this->layers[i].neurons[j].wCopy[k]<<std::endl;
-					}
-				}
-			}
-		}
+
+		//End function to testing
 	};
 
 };
