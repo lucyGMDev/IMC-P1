@@ -206,6 +206,7 @@ namespace imc
 				}
 			}
 		}
+		void WeightsAdjustment(){this->weightAdjustment();}
 		//End function to testing
 	};
 };

@@ -256,6 +256,16 @@ void MultilayerPerceptron::accumulateChange()
 // Update the network weights, from the first layer to the last one
 void MultilayerPerceptron::weightAdjustment()
 {
+	for (int i = 1; i < nOfLayers; i++)
+	{
+		for (int j = 0; j < this->layers[i].nOfNeurons; j++)
+		{
+			for (int k = 0; k < this->layers[i - 1].nOfNeurons+1; k++)
+			{
+				this->layers[i].neurons[j].w[k]-=this->layers[i].neurons[j].deltaW[k];
+			}
+		}
+	}
 }
 
 // ------------------------------
