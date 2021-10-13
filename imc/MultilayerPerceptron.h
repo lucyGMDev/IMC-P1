@@ -126,14 +126,65 @@ namespace imc
 		bool readWeights(const char *archivo);
 
 		//Function to testing
-		void show();
+		void show()
+		{
+			std::cout << "Mostrando neurona" << std::endl;
+			std::cout << "Tiene " << this->nOfLayers << " capas" << std::endl;
+			for (int i = 0; i < this->nOfLayers; i++)
+			{
+				std::cout << "Mostrando capa: " << i << std::endl;
+				std::cout << "Esta capa tiene: " << this->layers[i].nOfNeurons << " neuronas" << std::endl;
+				if (i > 0)
+				{
+					for (int j = 0; j < this->layers[i].nOfNeurons; j++)
+					{
+						std::cout << "Mostrando pesos de la neurona " << j << " de la capa " << i << std::endl;
+						for (int k = 0; k < this->layers[i - 1].nOfNeurons + 1; k++)
+						{
+							std::cout << this->layers[i].neurons[j].w[k] << std::endl;
+						}
+					}
+				}
+			}
+		}
+		void showOutput()
+		{
+			double *output = new double[this->layers[this->nOfLayers - 1].nOfNeurons];
+			this->getOutputs(output);
+			std::cout << "Output: " << std::endl;
+			for (int i = 0; i < this->layers[this->nOfLayers - 1].nOfNeurons; i++)
+			{
+				std::cout << output[i] << std::endl;
+			}
+		}
+		void showDelta()
+		{
+			int cont = 1;
+			for (int i = 1; i < nOfLayers; i++)
+			{
+				for (int j = 0; j < this->layers[i].nOfNeurons; j++)
+				{
+					std::cout << "Delta " << cont << ": " << this->layers[i].neurons[j].delta << std::endl;
+					cont++;
+				}
+			}
+		}
 		void addInput(double *input) { this->feedInputs(input); }
-		void showInputs();
+		void showInputs()
+		{
+			for (int i = 0; i < this->layers[0].nOfNeurons; i++)
+			{
+				std::cout << this->layers[0].neurons[i].out << std::endl;
+			}
+		}
 		void computeOutput()
 		{
 			this->forwardPropagate();
 		}
-
+		void computeDelta(double *target)
+		{
+			this->backpropagateError(target);
+		}
 		double getError(double *target)
 		{
 			return this->obtainError(target);

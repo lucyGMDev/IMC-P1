@@ -8,7 +8,7 @@ int main(int argc, char **argv)
   input[0] = 2.1;
   input[1] = 1.8;
   structure[0] = 2;
-  structure[1] = 1;
+  structure[1] = 3;
   structure[2] = 2;
   mlp->initialize(3, structure);
   double *target = new double[2];
@@ -16,8 +16,10 @@ int main(int argc, char **argv)
   target[1] = 3;
   mlp->addInput(input);
   mlp->computeOutput();
-  double error = mlp->getError(target);
-  std::cout<<"Error: "<<error<<std::endl;
+  mlp->computeDelta(target);
+  mlp->show();
+  mlp->showOutput();
+  mlp->showDelta();
   delete mlp;
   delete[] structure;
   delete[] input;

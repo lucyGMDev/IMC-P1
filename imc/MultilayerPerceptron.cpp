@@ -43,10 +43,10 @@ int MultilayerPerceptron::initialize(int nl, int npl[])
 		{
 			if (i > 0) //Inicializo los los pesos de las neuronas (la primera capa no tiene neuronas)
 			{
-				int numWeightInputs = npl[i - 1] + 1;//+1 por el sesgo
+				int numWeightInputs = npl[i - 1] + 1; //+1 por el sesgo
 				this->layers[i].neurons[j].w = new double[numWeightInputs];
 				this->layers[i].neurons[j].wCopy = new double[numWeightInputs];
-				for (int k = 0; k < numWeightInputs; k++) 
+				for (int k = 0; k < numWeightInputs; k++)
 				{
 					this->layers[i].neurons[j].w[k] = (double)((rand()) % 200 / (double)100) - 1;
 					this->layers[i].neurons[j].wCopy[k] = 0;
@@ -136,10 +136,10 @@ void MultilayerPerceptron::copyWeights()
 	//TODO Check Function
 	for (int i = 1; i < this->nOfLayers; i++)
 	{
-		std::cerr<<"Entro en la capa "<<i<<std::endl;
+		std::cerr << "Entro en la capa " << i << std::endl;
 		for (int j = 0; j < this->layers[i].nOfNeurons; j++)
 		{
-			std::cerr<<"Neurona "<<j<<std::endl;
+			std::cerr << "Neurona " << j << std::endl;
 			for (int k = 0; k < this->layers[i - 1].nOfNeurons; k++)
 			{
 				this->layers[i].neurons[j].wCopy[k] = this->layers[i].neurons[j].w[k];
@@ -176,7 +176,7 @@ void MultilayerPerceptron::forwardPropagate()
 			int k;
 			for (k = 0; k < this->layers[i - 1].nOfNeurons; k++)
 			{
-				sum += this->layers[i - 1].neurons[j+k].out * this->layers[i].neurons[j].w[k];
+				sum += this->layers[i - 1].neurons[j + k].out * this->layers[i].neurons[j].w[k];
 			}
 			sum += this->layers[i].neurons[j].w[k];
 			this->layers[i].neurons[j].out = 1 / (1 + exp(-sum));
@@ -189,16 +189,16 @@ void MultilayerPerceptron::forwardPropagate()
 double MultilayerPerceptron::obtainError(double *target)
 {
 	int outputSize = this->layers[nOfLayers - 1].nOfNeurons;
-	double* outputs = new double[outputSize];
+	double *outputs = new double[outputSize];
 	this->getOutputs(outputs);
 	double error = 0;
-	for(int i=0;i<outputSize;i++)
+	for (int i = 0; i < outputSize; i++)
 	{
-		std::cout<<"Output: " << outputs[i] << std::endl;
-		std::cout<<"Target: " <<target[i] << std::endl;
-		error+=pow(target[i]-outputs[i],2);
+		std::cout << "Output: " << outputs[i] << std::endl;
+		std::cout << "Target: " << target[i] << std::endl;
+		error += pow(target[i] - outputs[i], 2);
 	}
-	error/=outputSize;
+	error /= outputSize;
 	return error;
 }
 
@@ -206,6 +206,30 @@ double MultilayerPerceptron::obtainError(double *target)
 // Backpropagate the output error wrt a vector passed as an argument, from the last layer to the first one <--<--
 void MultilayerPerceptron::backpropagateError(double *target)
 {
+	for (int i = nOfLayers - 1; i > 0; i--)
+	{
+		if (i == nOfLayers - 1)
+		{
+			for (int j = 0; j < this->layers[i].nOfNeurons; j++)
+			{
+				double output = this->layers[i].neurons[j].out;
+				this->layers[i].neurons[j].delta = (target[j] - output) * output * (1 - output);
+			}
+		}
+		else
+		{
+			for (int j = 0; j < this->layers[i].nOfNeurons; j++)
+			{
+				double sumDeltaWeight = 0;
+				double output = this->layers[i].neurons[j].out;
+				for (int k = 0; k < this->layers[i + 1].nOfNeurons; k++)
+				{
+					sumDeltaWeight += this->layers[i + 1].neurons[k].delta * this->layers[i + 1].neurons[k].w[j];
+				}
+				this->layers[i].neurons[j].delta = sumDeltaWeight*output * (1 - output);
+			}
+		}
+	}
 }
 
 // ------------------------------
@@ -285,35 +309,7 @@ void MultilayerPerceptron::predict(Dataset *pDatosTest)
 		cout << endl;
 	}
 }
-void MultilayerPerceptron::show()
-{
-	std::cout << "Mostrando neurona" << std::endl;
-	std::cout << "Tiene " << this->nOfLayers << " capas" << std::endl;
-	for (int i = 0; i < this->nOfLayers; i++)
-	{
-		std::cout << "Mostrando capa: " << i << std::endl;
-		std::cout << "Esta capa tiene: " << this->layers[i].nOfNeurons << " neuronas" << std::endl;
-		if (i > 0)
-		{
-			for (int j = 0; j < this->layers[i].nOfNeurons; j++)
-			{
-				std::cout << "Mostrando pesos de la neurona " << j << " de la capa " << i << std::endl;
-				for (int k = 0; k < this->layers[i - 1].nOfNeurons + 1; k++)
-				{
-					std::cout << this->layers[i].neurons[j].w[k] << std::endl;
-				}
-			}
-		}
-	}
-}
 
-void MultilayerPerceptron::showInputs()
-{
-	for (int i = 0; i < this->layers[0].nOfNeurons; i++)
-	{
-		std::cout << this->layers[0].neurons[i].out << std::endl;
-	}
-}
 
 // ------------------------------
 // Run the traning algorithm for a given number of epochs, using trainDataset
