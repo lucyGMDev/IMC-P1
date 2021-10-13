@@ -46,6 +46,8 @@ int MultilayerPerceptron::initialize(int nl, int npl[])
 				int numWeightInputs = npl[i - 1] + 1; //+1 por el sesgo
 				this->layers[i].neurons[j].w = new double[numWeightInputs];
 				this->layers[i].neurons[j].wCopy = new double[numWeightInputs];
+				this->layers[i].neurons[j].deltaW = new double[numWeightInputs];
+				this->layers[i].neurons[j].lastDeltaW = new double[numWeightInputs];
 				for (int k = 0; k < numWeightInputs; k++)
 				{
 					this->layers[i].neurons[j].w[k] = (double)((rand()) % 200 / (double)100) - 1;
@@ -56,11 +58,11 @@ int MultilayerPerceptron::initialize(int nl, int npl[])
 			{
 				this->layers[i].neurons[j].w = nullptr;
 				this->layers[i].neurons[j].wCopy = nullptr;
+				this->layers[i].neurons[j].deltaW = nullptr;
+				this->layers[i].neurons[j].lastDeltaW = nullptr;
 			}
 			this->layers[i].neurons[j].out = 0;
 			this->layers[i].neurons[j].delta = 0;
-			this->layers[i].neurons[j].deltaW = 0;
-			this->layers[i].neurons[j].lastDeltaW = 0;
 		}
 	}
 
@@ -226,7 +228,7 @@ void MultilayerPerceptron::backpropagateError(double *target)
 				{
 					sumDeltaWeight += this->layers[i + 1].neurons[k].delta * this->layers[i + 1].neurons[k].w[j];
 				}
-				this->layers[i].neurons[j].delta = sumDeltaWeight*output * (1 - output);
+				this->layers[i].neurons[j].delta = sumDeltaWeight * output * (1 - output);
 			}
 		}
 	}
@@ -236,6 +238,18 @@ void MultilayerPerceptron::backpropagateError(double *target)
 // Accumulate the changes produced by one pattern and save them in deltaW
 void MultilayerPerceptron::accumulateChange()
 {
+	for (int i = nOfLayers - 1; i > 0; i--)
+	{
+		for (int j = 0; j < this->layers[i].nOfNeurons; j++)
+		{
+			int k;
+			for (k = 0; k < this->layers[i - 1].nOfNeurons; k++)
+			{
+				this->layers[i].neurons[j].deltaW[k] = this->layers[i].neurons[j].delta * this->layers[i - 1].neurons[k].out;
+			}
+			this->layers[i].neurons[j].deltaW[k] = this->layers[i].neurons[j].delta;
+		}
+	}
 }
 
 // ------------------------------
@@ -309,7 +323,6 @@ void MultilayerPerceptron::predict(Dataset *pDatosTest)
 		cout << endl;
 	}
 }
-
 
 // ------------------------------
 // Run the traning algorithm for a given number of epochs, using trainDataset

@@ -189,10 +189,25 @@ namespace imc
 		{
 			return this->obtainError(target);
 		}
-
+		void AccumulateChange()
+		{
+			this->accumulateChange();
+		}
+		void seeDeltaW()
+		{
+			for (int i = 1; i < nOfLayers; i++)
+			{
+				for (int j = 0; j < this->layers[i].nOfNeurons; j++)
+				{
+					for (int k = 0; k < this->layers[i - 1].nOfNeurons+1; k++)
+					{
+						std::cout << "Capa " << i << " conexión neurona " << j << " con neurona " << k << " de la capa " << i - 1 << ": " << this->layers[i].neurons[j].deltaW[k] << std::endl;
+					}
+				}
+			}
+		}
 		//End function to testing
 	};
-
 };
 
 #endif
