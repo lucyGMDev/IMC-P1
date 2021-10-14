@@ -74,7 +74,8 @@ int main(int argc, char **argv)
 
         // Parameters of the mlp. For example, mlp.eta = value;
         int iterations = -1; // This should be corrected
-
+        mlp.eta=0.1;
+        mlp.mu=0.9;
         // Read training and test data: call to mlp.readData(...)
         Dataset *trainDataset = NULL; // This should be corrected
         Dataset *testDataset = NULL;  // This should be corrected

@@ -34,6 +34,7 @@ int MultilayerPerceptron::initialize(int nl, int npl[])
 	srand(time(NULL));
 	this->nOfLayers = nl;
 	this->layers = new Layer[this->nOfLayers];
+	this->eta = 0.1;
 
 	for (int i = 0; i < nl; i++)
 	{
@@ -178,10 +179,13 @@ void MultilayerPerceptron::forwardPropagate()
 			int k;
 			for (k = 0; k < this->layers[i - 1].nOfNeurons; k++)
 			{
-				sum += this->layers[i - 1].neurons[j + k].out * this->layers[i].neurons[j].w[k];
+				std::cout<<this->layers[i - 1].neurons[k].out<<" * "<<this->layers[i].neurons[j].w[k]<<" + ";
+				sum += this->layers[i - 1].neurons[k].out * this->layers[i].neurons[j].w[k];
 			}
+			std::cout<<this->layers[i].neurons[j].w[k]<<std::endl;
 			sum += this->layers[i].neurons[j].w[k];
 			this->layers[i].neurons[j].out = 1 / (1 + exp(-sum));
+			std::cout<<"Salida: "<<this->layers[i].neurons[j].out<<std::endl;
 		}
 	}
 }
@@ -260,9 +264,9 @@ void MultilayerPerceptron::weightAdjustment()
 	{
 		for (int j = 0; j < this->layers[i].nOfNeurons; j++)
 		{
-			for (int k = 0; k < this->layers[i - 1].nOfNeurons+1; k++)
+			for (int k = 0; k < this->layers[i - 1].nOfNeurons + 1; k++)
 			{
-				this->layers[i].neurons[j].w[k]-=this->layers[i].neurons[j].deltaW[k];
+				this->layers[i].neurons[j].w[k] -= this->layers[i].neurons[j].deltaW[k] * this->eta;
 			}
 		}
 	}
@@ -279,6 +283,11 @@ void MultilayerPerceptron::printNetwork()
 // input is the input vector of the pattern and target is the desired output vector of the pattern
 void MultilayerPerceptron::performEpochOnline(double *input, double *target)
 {
+	feedInputs(input);
+	forwardPropagate();
+	backpropagateError(target);
+	accumulateChange();
+	weightAdjustment();
 }
 
 // ------------------------------
@@ -286,7 +295,68 @@ void MultilayerPerceptron::performEpochOnline(double *input, double *target)
 Dataset *MultilayerPerceptron::readData(const char *fileName)
 {
 
-	return NULL;
+	ifstream myFile(fileName); // Create an input stream
+
+	if (!myFile.is_open())
+	{
+		cout << "ERROR: I cannot open the file " << fileName << endl;
+		return NULL;
+	}
+
+	Dataset *dataset = new Dataset;
+	if (dataset == NULL)
+		return NULL;
+
+	string line;
+	int i, j;
+
+	if (myFile.good())
+	{
+		getline(myFile, line); // Read a line
+		istringstream iss(line);
+		iss >> dataset->nOfInputs;
+		iss >> dataset->nOfOutputs;
+		iss >> dataset->nOfPatterns;
+	}
+	dataset->inputs = new double *[dataset->nOfPatterns];
+	dataset->outputs = new double *[dataset->nOfPatterns];
+
+	for (i = 0; i < dataset->nOfPatterns; i++)
+	{
+		dataset->inputs[i] = new double[dataset->nOfInputs];
+		dataset->outputs[i] = new double[dataset->nOfOutputs];
+	}
+
+	i = 0;
+	while (myFile.good())
+	{
+		getline(myFile, line); // Read a line
+		if (!line.empty())
+		{
+			istringstream iss(line);
+			for (j = 0; j < dataset->nOfInputs; j++)
+			{
+				double value;
+				iss >> value;
+				if (!iss)
+					return NULL;
+				dataset->inputs[i][j] = value;
+			}
+			for (j = 0; j < dataset->nOfOutputs; j++)
+			{
+				double value;
+				iss >> value;
+				if (!iss)
+					return NULL;
+				dataset->outputs[i][j] = value;
+			}
+			i++;
+		}
+	}
+
+	myFile.close();
+
+	return dataset;
 }
 
 // ------------------------------
