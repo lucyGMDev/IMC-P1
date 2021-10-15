@@ -23,15 +23,17 @@ using namespace std;
 int main(int argc, char **argv)
 {
     // Process arguments of the command line
-    bool Tflag = 0, wflag = 0, pflag = 0, tflag = 0, rflag = 0;
-    char *Tvalue = NULL, *wvalue = NULL, *tvalue = NULL, *rvalue = NULL;
-    int c;
+    bool lflag = 0, Tflag = 0, wflag = 0, pflag = 0, tflag = 0, iflag = 0, hflag = 0, eflag = 0, mflag = 0, vflag = 0;
+    char *Tvalue = NULL, *wvalue = NULL, *tvalue = NULL, dflag = 0;
+
+    int c, ivalue = 0, lvalue = 0, hvalue = 0;
+    double evalue = 0, mvalue = 0, vvalue = 0, dvalue = 0;
 
     opterr = 0;
 
     // a: Option that requires an argument
     // a:: The argument required is optional
-    while ((c = getopt(argc, argv, "t:r:T:w:p")) != -1)
+    while ((c = getopt(argc, argv, "t:r:T::w:pi:l:h:e:m:v:d:")) != -1)
     {
         // The parameters needed for using the optional prediction mode of Kaggle have been included.
         // You should add the rest of parameters needed for the lab assignment.
@@ -52,9 +54,33 @@ int main(int argc, char **argv)
             tflag = true;
             tvalue = optarg;
             break;
-        case 'r':
-            rflag = true;
-            rvalue = optarg;
+        case 'i':
+            iflag = true;
+            ivalue = atoi(optarg);
+            break;
+        case 'l':
+            lflag = true;
+            lvalue = atoi(optarg);
+            break;
+        case 'h':
+            hflag = true;
+            hvalue = atoi(optarg);
+            break;
+        case 'e':
+            eflag = true;
+            evalue = atof(optarg);
+            break;
+        case 'm':
+            mflag = true;
+            mvalue = atof(optarg);
+            break;
+        case 'v':
+            vflag = true;
+            vvalue = atof(optarg);
+            break;
+        case 'd':
+            dflag = true;
+            dvalue = atof(optarg);
             break;
         case '?':
             if (optopt == 'T' || optopt == 'w' || optopt == 'p')
@@ -70,7 +96,8 @@ int main(int argc, char **argv)
             return EXIT_FAILURE;
         }
     }
-
+    if (Tvalue == NULL)
+        Tvalue = tvalue;
     if (!pflag)
     {
         //////////////////////////////////
@@ -81,25 +108,28 @@ int main(int argc, char **argv)
         MultilayerPerceptron mlp;
 
         // Parameters of the mlp. For example, mlp.eta = value;
-        int iterations = 1000; // This should be corrected
-        mlp.eta = 0.1;
-        mlp.mu = 0.9;
+        int iterations = iflag ? ivalue : 1000;
+        mlp.eta = eflag ? evalue : 0.1;
+        mlp.mu = mflag ? mvalue : 0.9;
+        mlp.validationRatio = vflag ? vvalue : 0;
+        mlp.decrementFactor = dflag ? dvalue : 0;
         // Read training and test data: call to mlp.readData(...)
         Dataset *trainDataset;
-        trainDataset = mlp.readData(tvalue); // This should be corrected
+        trainDataset = mlp.readData(tvalue);
         Dataset *testDataset;
-        testDataset = mlp.readData(rvalue); // This should be corrected// This should be corrected
-        if (trainDataset == NULL && testDataset == NULL)
+        testDataset = mlp.readData(Tvalue);
+        if (trainDataset == NULL || testDataset == NULL)
         {
             std::cerr << "Train and Test datasets are required" << std::endl;
             exit(-1);
         }
         // Initialize topology vector
-        int layers = 1;                      // This should be corrected
+        int layers = lflag ? lvalue : 1;
         int *topology = new int[layers + 2]; // This should be corrected
         topology[0] = trainDataset->nOfInputs;
-        topology[1] = 3;
-        topology[2] = trainDataset->nOfOutputs;
+        for (int i = 0; i <= layers; i++)
+            topology[i] = hflag ? hvalue : 5;
+        topology[layers + 1] = trainDataset->nOfOutputs;
 
         // Initialize the network using the topology vector
         mlp.initialize(layers + 2, topology);
@@ -142,13 +172,13 @@ int main(int argc, char **argv)
         averageTrainError = averageTrainError / (double)5;
 
         for (int i = 0; i < 5; i++)
-            stdTestError += pow((testErrors[i]-averageTestError),2);
-        stdTestError/=5;
+            stdTestError += pow((testErrors[i] - averageTestError), 2);
+        stdTestError /= 5;
         stdTestError = sqrt(stdTestError);
 
         for (int i = 0; i < 5; i++)
-            stdTrainError += pow((trainErrors[i]-averageTrainError),2);
-        stdTrainError/=5;
+            stdTrainError += pow((trainErrors[i] - averageTrainError), 2);
+        stdTrainError /= 5;
         stdTrainError = sqrt(stdTrainError);
 
         cout << "FINAL REPORT" << endl;
