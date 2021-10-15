@@ -1,7 +1,7 @@
 /*********************************************************************
-* File  : MultilayerPerceptron.cpp
-* Date  : 2020
-*********************************************************************/
+ * File  : MultilayerPerceptron.cpp
+ * Date  : 2020
+ *********************************************************************/
 
 #include "MultilayerPerceptron.h"
 
@@ -42,7 +42,7 @@ int MultilayerPerceptron::initialize(int nl, int npl[])
 		this->layers[i].neurons = new Neuron[npl[i]];
 		for (int j = 0; j < npl[i]; j++)
 		{
-			if (i > 0) //Inicializo los los pesos de las neuronas (la primera capa no tiene neuronas)
+			if (i > 0) // Inicializo los los pesos de las neuronas (la primera capa no tiene neuronas)
 			{
 				int numWeightInputs = npl[i - 1] + 1; //+1 por el sesgo
 				this->layers[i].neurons[j].w = new double[numWeightInputs];
@@ -51,7 +51,7 @@ int MultilayerPerceptron::initialize(int nl, int npl[])
 				this->layers[i].neurons[j].lastDeltaW = new double[numWeightInputs];
 				for (int k = 0; k < numWeightInputs; k++)
 				{
-					this->layers[i].neurons[j].w[k] = (double)((rand()) % 200 / (double)100) - 1;
+					this->layers[i].neurons[j].w[k] = (double)((rand()) % 201 / (double)100) - 1;
 					this->layers[i].neurons[j].wCopy[k] = 0;
 				}
 			}
@@ -109,6 +109,17 @@ void MultilayerPerceptron::freeMemory()
 // Feel all the weights (w) with random numbers between -1 and +1
 void MultilayerPerceptron::randomWeights()
 {
+	srand(time(NULL));
+	for (int i = 1; i < nOfLayers - 1; i++)
+	{
+		for (int j = 0; j < this->layers[i].nOfNeurons; j++)
+		{
+			for (int k = 0; k < this->layers[i - 1].nOfNeurons; k++)
+			{
+				this->layers[i].neurons[j].w[k] = (double)((rand()) % 201 / (double)100) - 1;
+			}
+		}
+	}
 }
 
 // ------------------------------
@@ -136,13 +147,11 @@ void MultilayerPerceptron::getOutputs(double *output)
 // Make a copy of all the weights (copy w in wCopy)
 void MultilayerPerceptron::copyWeights()
 {
-	//TODO Check Function
+	// TODO Check Function
 	for (int i = 1; i < this->nOfLayers; i++)
 	{
-		std::cerr << "Entro en la capa " << i << std::endl;
 		for (int j = 0; j < this->layers[i].nOfNeurons; j++)
 		{
-			std::cerr << "Neurona " << j << std::endl;
 			for (int k = 0; k < this->layers[i - 1].nOfNeurons; k++)
 			{
 				this->layers[i].neurons[j].wCopy[k] = this->layers[i].neurons[j].w[k];
@@ -179,13 +188,12 @@ void MultilayerPerceptron::forwardPropagate()
 			int k;
 			for (k = 0; k < this->layers[i - 1].nOfNeurons; k++)
 			{
-				std::cout<<this->layers[i - 1].neurons[k].out<<" * "<<this->layers[i].neurons[j].w[k]<<" + ";
+				
 				sum += this->layers[i - 1].neurons[k].out * this->layers[i].neurons[j].w[k];
 			}
-			std::cout<<this->layers[i].neurons[j].w[k]<<std::endl;
 			sum += this->layers[i].neurons[j].w[k];
 			this->layers[i].neurons[j].out = 1 / (1 + exp(-sum));
-			std::cout<<"Salida: "<<this->layers[i].neurons[j].out<<std::endl;
+			
 		}
 	}
 }
@@ -200,8 +208,7 @@ double MultilayerPerceptron::obtainError(double *target)
 	double error = 0;
 	for (int i = 0; i < outputSize; i++)
 	{
-		std::cout << "Output: " << outputs[i] << std::endl;
-		std::cout << "Target: " << target[i] << std::endl;
+		
 		error += pow(target[i] - outputs[i], 2);
 	}
 	error /= outputSize;
@@ -266,7 +273,7 @@ void MultilayerPerceptron::weightAdjustment()
 		{
 			for (int k = 0; k < this->layers[i - 1].nOfNeurons + 1; k++)
 			{
-				this->layers[i].neurons[j].w[k] -= this->layers[i].neurons[j].deltaW[k] * this->eta;
+				this->layers[i].neurons[j].w[k] += this->layers[i].neurons[j].deltaW[k] * this->eta;
 			}
 		}
 	}
@@ -374,11 +381,20 @@ void MultilayerPerceptron::trainOnline(Dataset *trainDataset)
 // Test the network with a dataset and return the MSE
 double MultilayerPerceptron::test(Dataset *testDataset)
 {
-	return -1.0;
+	double sumMSE=0;
+	for(int i=0; i<testDataset->nOfPatterns;i++)
+	{
+		double* outputs = new double[this->layers[this->nOfLayers-1].nOfNeurons];
+		feedInputs(testDataset->inputs[i]);
+		forwardPropagate();
+		sumMSE+=getError(testDataset->outputs[i]);
+
+	}
+	return sumMSE/testDataset->nOfPatterns;
 }
 
 // Optional - KAGGLE
-// Test the network with a dataset and return the MSE
+// Test the networreturn -1.0;k with a dataset and return the MSE
 // Your have to use the format from Kaggle: two columns (Id y predictied)
 void MultilayerPerceptron::predict(Dataset *pDatosTest)
 {
@@ -458,7 +474,7 @@ void MultilayerPerceptron::runOnlineBackPropagation(Dataset *trainDataset, Datas
 		// Apart from this, the way the stopping condition is checked is the same than that
 		// applied for the training set
 
-		cout << "Iteration " << countTrain << "\t Training error: " << trainError << "\t Validation error: " << validationError << endl;
+		// cout << "Iteration " << countTrain << "\t Training error: " << trainError << "\t Validation error: " << validationError << endl;
 
 	} while (countTrain < maxiter);
 

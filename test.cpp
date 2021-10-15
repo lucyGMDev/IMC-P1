@@ -2,32 +2,20 @@
 #include <iostream>
 int main(int argc, char **argv)
 {
-  imc::MultilayerPerceptron *mlp = new 
-  imc::MultilayerPerceptron();
-  mlp->eta=0.1;
-  int *structure = new int[3];
-  double *input = new double[2];
-  input[0] = 2.1;
-  input[1] = 1.8;
-  structure[0] = 2;
-  structure[1] = 3;
-  structure[2] = 2;
-  mlp->initialize(3, structure);
-  double *target = new double[2];
-  target[0] = 2;
-  target[1] = 3;
-  mlp->addInput(input);
-  mlp->computeOutput();
-  mlp->show();
-  mlp->showOutput();
-  mlp->computeDelta(target);
-  mlp->showDelta();
-  mlp->AccumulateChange();
-  mlp->WeightsAdjustment();
-  mlp->show();
+  imc::MultilayerPerceptron mlp;
+  int numCapaOculta=1;
+  int* estructura = new int[numCapaOculta+2];
+  estructura[0] = 2;
+  estructura[1] = 3;
+  estructura[2] = 1;
+  mlp.initialize(numCapaOculta+2,estructura);
   
-  
-  delete mlp;
-  delete[] structure;
-  delete[] input;
+  imc::Dataset* trainData = mlp.readData("trainDatasets/train_xor.dat");
+  imc::Dataset* testData = mlp.readData("testDatasets/test_xor.dat");
+  double* errorTrain = new double;
+  double* errorTest = new double;
+  mlp.runOnlineBackPropagation(trainData,testData,1000,errorTrain,errorTest);
+
+  delete errorTrain;
+  delete errorTest;  
 }

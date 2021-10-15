@@ -23,15 +23,15 @@ using namespace std;
 int main(int argc, char **argv)
 {
     // Process arguments of the command line
-    bool Tflag = 0, wflag = 0, pflag = 0;
-    char *Tvalue = NULL, *wvalue = NULL;
+    bool Tflag = 0, wflag = 0, pflag = 0, tflag = 0, rflag = 0;
+    char *Tvalue = NULL, *wvalue = NULL, *tvalue = NULL, *rvalue = NULL;
     int c;
 
     opterr = 0;
 
     // a: Option that requires an argument
     // a:: The argument required is optional
-    while ((c = getopt(argc, argv, "T:w:p")) != -1)
+    while ((c = getopt(argc, argv, "t:r:T:w:p")) != -1)
     {
         // The parameters needed for using the optional prediction mode of Kaggle have been included.
         // You should add the rest of parameters needed for the lab assignment.
@@ -47,6 +47,14 @@ int main(int argc, char **argv)
             break;
         case 'p':
             pflag = true;
+            break;
+        case 't':
+            tflag = true;
+            tvalue = optarg;
+            break;
+        case 'r':
+            rflag = true;
+            rvalue = optarg;
             break;
         case '?':
             if (optopt == 'T' || optopt == 'w' || optopt == 'p')
@@ -73,16 +81,25 @@ int main(int argc, char **argv)
         MultilayerPerceptron mlp;
 
         // Parameters of the mlp. For example, mlp.eta = value;
-        int iterations = -1; // This should be corrected
-        mlp.eta=0.1;
-        mlp.mu=0.9;
+        int iterations = 1000; // This should be corrected
+        mlp.eta = 0.1;
+        mlp.mu = 0.9;
         // Read training and test data: call to mlp.readData(...)
-        Dataset *trainDataset = NULL; // This should be corrected
-        Dataset *testDataset = NULL;  // This should be corrected
-
+        Dataset *trainDataset;
+        trainDataset = mlp.readData(tvalue); // This should be corrected
+        Dataset *testDataset;
+        testDataset = mlp.readData(rvalue); // This should be corrected// This should be corrected
+        if (trainDataset == NULL && testDataset == NULL)
+        {
+            std::cerr << "Train and Test datasets are required" << std::endl;
+            exit(-1);
+        }
         // Initialize topology vector
-        int layers = -1;      // This should be corrected
-        int *topology = NULL; // This should be corrected
+        int layers = 1;                      // This should be corrected
+        int *topology = new int[layers + 2]; // This should be corrected
+        topology[0] = trainDataset->nOfInputs;
+        topology[1] = 3;
+        topology[2] = trainDataset->nOfOutputs;
 
         // Initialize the network using the topology vector
         mlp.initialize(layers + 2, topology);
@@ -115,6 +132,24 @@ int main(int argc, char **argv)
         double averageTrainError = 0, stdTrainError = 0;
 
         // Obtain training and test averages and standard deviations
+        for (int i = 0; i < 5; i++)
+            averageTestError += testErrors[i];
+
+        for (int i = 0; i < 5; i++)
+            averageTrainError += trainErrors[i];
+
+        averageTestError = averageTestError / (double)5;
+        averageTrainError = averageTrainError / (double)5;
+
+        for (int i = 0; i < 5; i++)
+            stdTestError += pow((testErrors[i]-averageTestError),2);
+        stdTestError/=5;
+        stdTestError = sqrt(stdTestError);
+
+        for (int i = 0; i < 5; i++)
+            stdTrainError += pow((trainErrors[i]-averageTrainError),2);
+        stdTrainError/=5;
+        stdTrainError = sqrt(stdTrainError);
 
         cout << "FINAL REPORT" << endl;
         cout << "************" << endl;
