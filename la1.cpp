@@ -112,7 +112,7 @@ int main(int argc, char **argv)
         mlp.eta = eflag ? evalue : 0.1;
         mlp.mu = mflag ? mvalue : 0.9;
         mlp.validationRatio = vflag ? vvalue : 0;
-        mlp.decrementFactor = dflag ? dvalue : 0;
+        mlp.decrementFactor = dflag ? dvalue : 1;
         // Read training and test data: call to mlp.readData(...)
         Dataset *trainDataset;
         trainDataset = mlp.readData(tvalue);

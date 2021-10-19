@@ -53,6 +53,8 @@ int MultilayerPerceptron::initialize(int nl, int npl[])
 				{
 					this->layers[i].neurons[j].w[k] = (double)((rand()) % 201 / (double)100) - 1;
 					this->layers[i].neurons[j].wCopy[k] = 0;
+					this->layers[i].neurons[j].deltaW[k] = 0;
+					this->layers[i].neurons[j].lastDeltaW[k] = 0;
 				}
 			}
 			else
@@ -164,7 +166,7 @@ void MultilayerPerceptron::copyWeights()
 // Restore a copy of all the weights (copy wCopy in w)
 void MultilayerPerceptron::restoreWeights()
 {
-	for (int i = 0; i < this->nOfLayers; i++)
+	for (int i = 1; i < this->nOfLayers; i++)
 	{
 		for (int j = 0; j < this->layers[i].nOfNeurons; j++)
 		{
@@ -188,12 +190,11 @@ void MultilayerPerceptron::forwardPropagate()
 			int k;
 			for (k = 0; k < this->layers[i - 1].nOfNeurons; k++)
 			{
-				
+
 				sum += this->layers[i - 1].neurons[k].out * this->layers[i].neurons[j].w[k];
 			}
 			sum += this->layers[i].neurons[j].w[k];
 			this->layers[i].neurons[j].out = 1 / (1 + exp(-sum));
-			
 		}
 	}
 }
@@ -208,7 +209,7 @@ double MultilayerPerceptron::obtainError(double *target)
 	double error = 0;
 	for (int i = 0; i < outputSize; i++)
 	{
-		
+
 		error += pow(target[i] - outputs[i], 2);
 	}
 	error /= outputSize;
@@ -273,7 +274,10 @@ void MultilayerPerceptron::weightAdjustment()
 		{
 			for (int k = 0; k < this->layers[i - 1].nOfNeurons + 1; k++)
 			{
-				this->layers[i].neurons[j].w[k] += this->layers[i].neurons[j].deltaW[k] * this->eta;
+				double learningRate = this->eta * pow(this->decrementFactor, -(this->nOfLayers - i));
+				this->layers[i].neurons[j].w[k] += this->layers[i].neurons[j].deltaW[k] * learningRate + this->mu * this->layers[i].neurons[j].lastDeltaW[k] * learningRate;
+
+				this->layers[i].neurons[j].lastDeltaW[k] = this->layers[i].neurons[j].deltaW[k];
 			}
 		}
 	}
@@ -381,16 +385,15 @@ void MultilayerPerceptron::trainOnline(Dataset *trainDataset)
 // Test the network with a dataset and return the MSE
 double MultilayerPerceptron::test(Dataset *testDataset)
 {
-	double sumMSE=0;
-	for(int i=0; i<testDataset->nOfPatterns;i++)
+	double sumMSE = 0;
+	for (int i = 0; i < testDataset->nOfPatterns; i++)
 	{
-		double* outputs = new double[this->layers[this->nOfLayers-1].nOfNeurons];
+		double *outputs = new double[this->layers[this->nOfLayers - 1].nOfNeurons];
 		feedInputs(testDataset->inputs[i]);
 		forwardPropagate();
-		sumMSE+=getError(testDataset->outputs[i]);
-
+		sumMSE += getError(testDataset->outputs[i]);
 	}
-	return sumMSE/testDataset->nOfPatterns;
+	return sumMSE / testDataset->nOfPatterns;
 }
 
 // Optional - KAGGLE
@@ -426,21 +429,49 @@ void MultilayerPerceptron::predict(Dataset *pDatosTest)
 // Both training and test MSEs should be obtained and stored in errorTrain and errorTest
 void MultilayerPerceptron::runOnlineBackPropagation(Dataset *trainDataset, Dataset *pDatosTest, int maxiter, double *errorTrain, double *errorTest)
 {
+	cerr << this->validationRatio << std::endl;
 	int countTrain = 0;
-
+	int iterWithoutImprovingValidation = 0;
 	// Random assignment of weights (starting point)
 	randomWeights();
-
 	double minTrainError = 0;
-	int iterWithoutImproving;
+	int iterWithoutImproving = 0;
 	double testError = 0;
 
 	double validationError = 1;
+	double lastValidationError = 1;
 
+	bool useValidation = false;
+	Dataset *validationDataset;
 	// Generate validation data
 	if (validationRatio > 0 && validationRatio < 1)
 	{
-		// .......
+		useValidation = true;
+		validationDataset = new Dataset();
+		int validationSize = validationRatio * trainDataset->nOfPatterns;
+		validationDataset->nOfPatterns = validationSize;
+		validationDataset->nOfInputs = trainDataset->nOfInputs;
+		validationDataset->nOfOutputs = trainDataset->nOfOutputs;
+		validationDataset->inputs = new double *[validationDataset->nOfPatterns];
+		validationDataset->outputs = new double *[validationDataset->nOfPatterns];
+
+		cerr << validationSize << endl;
+		cerr << trainDataset->nOfPatterns - validationSize << endl;
+
+		for (int i = 0; i < validationSize; i++)
+		{
+			validationDataset->inputs[i] = new double[validationDataset->nOfInputs];
+			validationDataset->outputs[i] = new double[validationDataset->nOfOutputs];
+			for (int j = 0; j < validationDataset->nOfInputs; j++)
+			{
+				validationDataset->inputs[i][j] = trainDataset->inputs[trainDataset->nOfPatterns - validationSize + i][j];
+			}
+			for (int j = 0; j < validationDataset->nOfOutputs; j++)
+			{
+				validationDataset->outputs[i][j] = trainDataset->inputs[trainDataset->nOfPatterns - validationSize + i][j];
+			}
+		}
+		trainDataset->nOfPatterns = trainDataset->nOfPatterns - validationSize;
 	}
 
 	// Learning
@@ -449,6 +480,7 @@ void MultilayerPerceptron::runOnlineBackPropagation(Dataset *trainDataset, Datas
 
 		trainOnline(trainDataset);
 		double trainError = test(trainDataset);
+		
 		if (countTrain == 0 || trainError < minTrainError)
 		{
 			minTrainError = trainError;
@@ -459,7 +491,6 @@ void MultilayerPerceptron::runOnlineBackPropagation(Dataset *trainDataset, Datas
 			iterWithoutImproving = 0;
 		else
 			iterWithoutImproving++;
-
 		if (iterWithoutImproving == 50)
 		{
 			cout << "We exit because the training is not improving!!" << endl;
@@ -467,6 +498,32 @@ void MultilayerPerceptron::runOnlineBackPropagation(Dataset *trainDataset, Datas
 			countTrain = maxiter;
 		}
 
+		if (useValidation)
+		{
+			validationError = test(validationDataset);
+			if (validationError < lastValidationError)
+			{
+				iterWithoutImprovingValidation = 0;
+			}
+			else if (validationError - lastValidationError < 0.00001)
+			{
+				iterWithoutImprovingValidation = 0;
+			}
+			else
+			{
+				iterWithoutImprovingValidation++;
+			}
+
+			if (iterWithoutImprovingValidation == 50)
+			{
+				cout << "We exit because the validation is not improving!!" << endl;
+				restoreWeights();
+				countTrain = maxiter;
+			}
+
+			lastValidationError = validationError;
+		}
+		// cerr<<countTrain<<endl;
 		countTrain++;
 
 		// Check validation stopping condition and force it
@@ -492,9 +549,9 @@ void MultilayerPerceptron::runOnlineBackPropagation(Dataset *trainDataset, Datas
 		feedInputs(pDatosTest->inputs[i]);
 		forwardPropagate();
 		getOutputs(prediction);
-		for (int j = 0; j < pDatosTest->nOfOutputs; j++)
-			cout << pDatosTest->outputs[i][j] << " -- " << prediction[j] << " ";
-		cout << endl;
+		// for (int j = 0; j < pDatosTest->nOfOutputs; j++)
+		// 	cout << pDatosTest->outputs[i][j] << " -- " << prediction[j] << " ";
+		// cout << endl;
 		delete[] prediction;
 	}
 
